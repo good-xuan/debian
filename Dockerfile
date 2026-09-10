@@ -1,24 +1,45 @@
 FROM debian:13
 
-# 安装 systemd、dbus 及 openssh-server
+# 安装基础组件及 openssh-server
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     systemd \
     dbus \
     openssh-server \
+    openssl \
     && rm -rf /var/lib/apt/lists/*
 
-# 设置 systemd 默认运行级别并启用 ssh 服务
-RUN systemctl set-default multi-user.target && \
+# 允许 root 远程密码登录并启用 SSH
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    systemctl set-default multi-user.target && \
     systemctl enable ssh
 
-# 配置 SSH
-RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+# 编写随机生成密码的脚本
+RUN printf '#!/bin/bash\n\
+PASSWORD=$(openssl rand -base64 12)\n\
+echo "root:${PASSWORD}" | chpasswd\n\
+echo "========================================"\n\
+echo "[SSH INFO] Root password set to: ${PASSWORD}"\n\
+echo "========================================"\n' > /usr/local/bin/init-root-password.sh && \
+    chmod +x /usr/local/bin/init-root-password.sh
 
-# 暴露 SSH 端口
+# 注册一次性 systemd 服务，将输出重定向到控制台以供 docker logs 捕获
+RUN printf '[Unit]\n\
+Description=Generate random root password\n\
+Before=ssh.service\n\
+\n\
+[Service]\n\
+Type=oneshot\n\
+ExecStart=/usr/local/bin/init-root-password.sh\n\
+StandardOutput=journal+console\n\
+StandardError=journal+console\n\
+\n\
+[Install]\n\
+WantedBy=multi-user.target\n' > /etc/systemd/system/generate-root-pwd.service && \
+    systemctl enable generate-root-pwd.service
+
 EXPOSE 22
 
 WORKDIR /root
 
-# 以 systemd 作为 PID 1 启动
 CMD ["/lib/systemd/systemd"]
