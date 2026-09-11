@@ -1,4 +1,4 @@
-FROM debian:13
+FROM debian:stable-slim
 
 # 安装基础组件及 openssh-server
 RUN apt-get update && \
