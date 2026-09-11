@@ -4,7 +4,6 @@ WORKDIR /app
 
 # 安装必要的工具并清理 apt 缓存以减少体积
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        ttyd \
         tini \
         bash \
         coreutils \
