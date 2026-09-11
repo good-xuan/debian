@@ -1,21 +1,37 @@
-FROM debian:13
+FROM debian
 
-# 安装基础组件及 openssh-server
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    systemd \
-    dbus \
-    openssh-server \
+ARG TTYD_VERSION=1.7.7
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        bash \
+        coreutils \
+        fastfetch \
+        fish \
+    && curl -fL \
+        "https://github.com/tsl0922/ttyd/releases/download/${TTYD_VERSION}/ttyd.x86_64" \
+        -o /usr/local/bin/ttyd \
+    && chmod +x /usr/local/bin/ttyd \
+    && ttyd --version \
     && rm -rf /var/lib/apt/lists/*
 
-# 允许 root 远程密码登录并启用 SSH
-RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
-    systemctl set-default multi-user.target && \
-    systemctl enable ssh
+ENV TERM=xterm-256color
 
-
-EXPOSE 22
+# 写入 config.fish：清空 fish 自带的文本问候语，并执行 fastfetch
+RUN mkdir -p /root/.config/fish && \
+    echo 'set -g fish_greeting ""' >> /root/.config/fish/config.fish && \
+    echo 'fastfetch' >> /root/.config/fish/config.fish
 
 WORKDIR /root
 
-CMD ["/lib/systemd/systemd"]
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+EXPOSE 7681
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+# 默认启动 Shell 设为 fish
+CMD ["-W", "-p", "7681", "fish"]
