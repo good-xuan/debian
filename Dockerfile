@@ -7,6 +7,9 @@ RUN apt-get update \
         ca-certificates \
         curl \
         bash \
+        iproute2 \
+        openssh-client \
+        iputils-ping \
         coreutils \
         fastfetch \
         fish \
