@@ -29,4 +29,4 @@ echo " Password : ${PASSWORD}"
 echo " Web URL  : http://<server-ip>:7681"
 echo "=========================================="
 
-exec /sbin/tini -- ttyd -c "${USER}:${PASSWORD}" "$@"
+exec ttyd -c "${USER}:${PASSWORD}" "$@"
