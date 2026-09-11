@@ -1,4 +1,4 @@
-FROM debian:stable-slim
+FROM debian
 
 ARG TTYD_VERSION=1.7.7
 
