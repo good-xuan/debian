@@ -1,14 +1,21 @@
 FROM debian:stable-slim
 
-WORKDIR /app
+ARG TTYD_VERSION=1.7.7
 
-# 安装必要的工具并清理 apt 缓存以减少体积
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
         tini \
         bash \
         coreutils \
         fastfetch \
         fish \
+    && curl -fL \
+        "https://github.com/tsl0922/ttyd/releases/download/${TTYD_VERSION}/ttyd.x86_64" \
+        -o /usr/local/bin/ttyd \
+    && chmod +x /usr/local/bin/ttyd \
+    && ttyd --version \
     && rm -rf /var/lib/apt/lists/*
 
 ENV TERM=xterm-256color
